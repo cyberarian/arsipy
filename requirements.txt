@@ -24,7 +24,8 @@ gspread
 oauth2client
 pandas
 google-api-python-client
-paddleocr
+pytesseract
 google-generativeai
 pillow
 numpy
+libgl1
