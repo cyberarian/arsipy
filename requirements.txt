@@ -28,4 +28,9 @@ pytesseract
 google-generativeai
 pillow
 numpy
-libgl1
+streamlit
+opencv-python-headless
+textblob
+scipy
+nltk
+scikit-learn

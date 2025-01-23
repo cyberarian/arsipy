@@ -13,7 +13,8 @@ import logging
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 # Configure Tesseract path
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe' # windows
+# pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract' # linux
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -179,23 +180,24 @@ class ImageAnalyzer:
 def image_analyzer_main():
        
     st.markdown("""
-        ### Introducing Our Advanced Text Extraction System
+        ### Memperkenalkan Sistem Ekstraksi Teks Canggih Kami
 
-        This cutting-edge system leverages the powerful combination of pytesseract, a state-of-the-art Optical Character Recognition (OCR) library, and Google Gemini, a revolutionary AI enhancement technology. This synergy enables our system to deliver unparalleled text extraction accuracy and precision.
+        Sistem canggih ini memanfaatkan kombinasi yang kuat antara pytesseract, pustaka Python yang menyediakan antarmuka ke mesin OCR Tesseract, dan Multimodal AI dari Google Gemini 2.0 Flash, sinergi ini memungkinkan sistem kami memberikan akurasi dan presisi ekstraksi teks yang optimal.
 
-        #### Get Started with Image Upload
+        #### Memulai dengan Unggah Gambar
 
-        To initiate the analysis process, simply upload an image containing the text you'd like to extract. Our system will then utilize the advanced capabilities of pytesseract and Google Gemini to:
+        Untuk memulai proses analisis, cukup unggah gambar yang berisi teks yang ingin Anda ekstrak. Sistem kami kemudian akan memanfaatkan kemampuan canggih dari pytesseract dan Google Gemini:
 
-        Precisely recognize text: Accurately identify and extract text from the uploaded image, including fonts, layouts, and languages.
+        - Mengenali teks dengan tepat: Mengidentifikasi dan mengekstrak teks secara akurat dari gambar yang diunggah, termasuk jenis huruf, tata letak, dan bahasa.
+
+        - Meningkatkan kualitas teks: Menerapkan penyempurnaan berbasis AI untuk menyempurnakan teks yang diekstrak, mengoreksi kesalahan, dan meningkatkan keterbacaan secara keseluruhan.
+
+        - Menghasilkan output berkualitas tinggi: Memberikan Anda output teks yang bersih, terformat, dan mudah dibaca, siap untuk pemrosesan atau analisis lebih lanjut.
+
+        Unggah Gambar Anda Sekarang
         
-        Enhance text quality: Apply AI-driven enhancements to refine the extracted text, correcting errors and improving overall readability.
-        
-        Deliver high-quality output: Provide you with a clean, formatted, and easily readable text output, ready for further processing or analysis.
-        
-        #### Upload Your Image Now
-
-        Click the upload button to begin the analysis process. Our system will quickly and efficiently extract the text from your image, leveraging the combined strengths of pytesseract and Google Gemini to deliver superior results.
+        Klik tombol unggah untuk memulai proses analisis. Sistem kami akan mengekstrak teks dengan cepat dan efisien dari gambar Anda, memanfaatkan kekuatan gabungan pytesseract dan Google Gemini untuk memberikan hasil yang optimal.
+              
     """)
     
     uploaded_file = st.file_uploader(

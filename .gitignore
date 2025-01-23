@@ -29,12 +29,6 @@ ENV/
 # Streamlit
 .streamlit/secrets.toml
 
-# Database
-chroma_db/
-*.sqlite3
-*.sqlite
-*.db
-
 # Logs
 *.log
 logs/

@@ -95,16 +95,6 @@ def show_landing_page():
     - **Akses 24/7**: Tersedia kapan saja, di mana saja.
     """)
 
-    # How It Works
-    st.write("""
-    ### Cara Menggunakan Arsipy:
-    1. **Ajukan Pertanyaan**: Ketik pertanyaan Anda tentang manual arsip di kolom chat.
-    2. **Unggah Gambar**: Unggah gambar dokumen tulisan tangan untuk analisis dan ekstraksi teks.
-    3. **Dapatkan Jawaban**: Arsipy akan memberikan jawaban yang relevan dari manual arsip atau hasil analisis tulisan tangan.
-    4. **Pelajari Lebih Lanjut**: Jelajahi referensi yang diberikan untuk pemahaman mendalam.
-    5. **Simpan Referensi**: Simpan jawaban penting untuk referensi di masa mendatang.
-    """)
-
     # Call-to-Action
     st.write("""
     ### Mulai Jelajahi Arsipy!
@@ -309,17 +299,17 @@ def show_chat_interface(llm, prompt):
     
     # Create tabs for the main interface
     tab1, tab5, tab3, tab2, tab4 = st.tabs([
-        "💬 Chat", 
-        "🖼️ Analisis Gambar", 
-        "❓ How-to", 
-        "ℹ️ About",
+        "💬 Chatbot", 
+        "🖼️ Analisis tulisan tangan", 
+        "❓ Panduan", 
+        "ℹ️ Tentang",
         "📚 Resources"
     ])    
     
     with tab1:
         # Add a greeting message
         if not st.session_state.uploaded_file_names:
-            st.info("👋 Welcome to Digital Archive Manual System - Your Document Management Solution")
+            st.info("👋 Welcome to Arsipy, your AI-powered guide to archive manuals and handwriting analysis")
 
         
         # Initialize chat history in session state if it doesn't exist
@@ -381,15 +371,14 @@ def show_chat_interface(llm, prompt):
     with tab2:
         st.write("""
         ### 🎯 Tentang Arsipy
-        Arsipy adalah asisten AI yang dikembangkan khusus untuk referensi manual arsip dan analisis tulisan tangan.
-        
-        Aplikasi ini menggabungkan teknologi RAG (Retrieval Augmented Generation) dengan kemampuan analisis 
-        tulisan tangan untuk memberikan pengalaman pencarian dan referensi yang lebih efisien.
-        
-        - Mempelajari dan merujuk manual arsip melalui chatbot interaktif.
-        - Menganalisis dokumen tulisan tangan untuk ekstraksi teks dan referensi.
+        Arsipy adalah asisten AI yang dikembangkan untuk membantu Anda mengakses dan memahami manual arsip dengan lebih efektif. Aplikasi ini menggunakan teknologi RAG (Retrieval-Augmented Generation) dan analisis gambar untuk menguraikan dan mengekstraksi teks dari dokumen tulisan tangan.
 
-        Dengan teknologi RAG (Retrieval-Augmented Generation) dan analisis gambar, Arsipy memastikan Anda mendapatkan informasi yang akurat dan terstruktur, baik dari teks digital maupun tulisan tangan.
+        Dengan Arsipy, Anda dapat:
+
+        - Mempelajari dan merujuk manual arsip melalui chatbot interaktif yang mudah digunakan.
+        - Menganalisis dokumen tulisan tangan untuk mengekstraksi teks dan referensi yang relevan.
+        
+        Arsipy memastikan Anda mendapatkan informasi yang akurat dan terstruktur, baik dari teks digital maupun tulisan tangan. Dengan demikian, Anda dapat lebih mudah mengakses dan memahami isi manual arsip, serta meningkatkan efisiensi dalam mencari informasi.
 
         ### 🔍 Fitur Utama
         **RAG-based Chatbot**
@@ -409,7 +398,8 @@ def show_chat_interface(llm, prompt):
 
         ### 💻 Teknologi
         - **Backend**: Python, ChromaDB, LangChain
-        - **AI Models**: llama-3.3-70b-versatile, Google Gemini, Tesseract OCR
+        - **AI Models**: llama-3.3-70b-versatile, Google Gemini
+        - **OCR**: pytesseract, Tesseract OCR
         - **Frontend**: Streamlit
         - **Database**: Vector Store dengan Google AI Embeddings
 
@@ -429,19 +419,14 @@ def show_chat_interface(llm, prompt):
         #### 2️⃣ Analisis Tulisan Tangan
         1. Buka tab **🖼️ Analisis Gambar**
         2. Upload gambar tulisan tangan (.jpg, .png, .jpeg)
-        3. Pilih metode analisis:
-        - Tesseract OCR: Ekstraksi teks dasar
-        - Google Gemini: Analisis AI lanjutan
-        - Hybrid: Kombinasi OCR dan AI
-        4. Tunggu hasil analisis
-        5. Periksa teks yang diekstrak
+        3. Periksa teks yang diekstrak
 
         ### 📋 Format File yang Didukung
 
         #### Gambar Tulisan Tangan
         - Format: JPG, PNG, JPEG
         - Ukuran max: 5MB
-        - Resolusi minimal: 300dpi
+        - Resolusi yang dianjurkan: 300dpi
         - Background: Putih/terang
 
         #### Manual Arsip
@@ -455,7 +440,7 @@ def show_chat_interface(llm, prompt):
         - Gunakan bahasa yang jelas
         - Berikan konteks spesifik
         - Tanyakan satu topik per chat
-        - Manfaatkan history chat
+        - Manfaatkan history chat untuk mempertajam pertanyaan
 
         #### Untuk Analisis Gambar Optimal
         - Pastikan pencahayaan baik
@@ -469,15 +454,12 @@ def show_chat_interface(llm, prompt):
         1. **Chat tidak merespon**
         - Refresh halaman
         - Periksa koneksi internet
+        - Batas token model telah terlampaui. Mohon bersabar beberapa saat lagi
         
         2. **Analisis gambar gagal**
         - Coba format file berbeda
         - Kurangi ukuran file
         - Perbaiki kualitas gambar
-
-        3. **Hasil tidak akurat**
-        - Gunakan mode Hybrid
-        - Tingkatkan kualitas input
         - Coba analisis ulang
             """)
         
@@ -499,25 +481,19 @@ def show_chat_interface(llm, prompt):
         - Standar prosedur kearsipan
         - [Akses Repositori UT](http://repository.ut.ac.id)
         
-        #### Kerangka Kerja Bank Dunia
-        - Peta Jalan Manajemen Rekaman
+        #### WBG Records Management Roadmap
+        - Peta Jalan Manajemen Rekod
         - Standar internasional pengelolaan arsip
         - Praktik terbaik preservasi dokumen
         - Best practices global
+        - [Akses WBG Roadmap](https://www.worldbank.org/en/archive/aboutus/records-management-roadmap)
         
         #### Regulasi Indonesia
-        - **UU No. 43 Tahun 2009** tentang Kearsipan
-        - Peraturan pelaksanaan terkait
-        - Standar Nasional Indonesia (SNI) Kearsipan
-        - Pedoman teknis kearsipan nasional
-        
-        ### 📋 Standar yang Diterapkan
-        - Autentikasi dokumen
-        - Integritas data
-        - Preservasi digital
-        - Pengelolaan metadata
-        - Sistem klasifikasi arsip
-        
+        - UU No. 43 Tahun 2009 tentang Kearsipan
+        - Peraturan Pemerintah No. 28/2012 tentang Pelaksanaan Undang-Undang Nomor 43 Tahun 2009 tentang Kearsipan;
+        - Peraturan Arsip Nasional Republik Indonesia No. 3/2024 tentang Pedoman Penyelenggaraan Pelatihan Kearsipan
+        - Pedoman teknis kearsipan nasional     
+       
         ### 🔒 Jaminan Kualitas
         - Validasi sumber
         - Pembaruan berkala
@@ -601,7 +577,7 @@ def main():
         )
         
         prompt = ChatPromptTemplate.from_template("""
-           Your role: Your name is Arsipy, Chatbot Pintar untuk Referensi Manual Arsip dan Analisis Tulisan Tangan
+            Your role: Your name is Arsipy, Chatbot Pintar untuk Referensi Manual Arsip dan Analisis Tulisan Tangan
             Language: Dynamically adapt your responses to match the user's language with formal tone
             Function: Assist the user in finding relevant information within provided documents, including names, titles, locations, history, tables, images, and other relevant texts. Keep responses brief and accurate; provide detailed explanations only when specifically requested.
             Greetings: respond to the greetings accordingly.
