@@ -371,8 +371,12 @@ def show_chat_interface(llm, prompt):
     with tab2:
         st.write("""
         ### 🎯 Tentang Arsipy
-        Arsipy adalah asisten AI yang dikembangkan untuk membantu Anda mengakses dan memahami manual arsip dengan lebih efektif. Aplikasi ini menggunakan teknologi RAG (Retrieval-Augmented Generation) dan analisis gambar untuk menguraikan dan mengekstraksi teks dari dokumen tulisan tangan.
+        Unit Kearsipan dan Manajemen Rekod sering kali menghadapi manual, prosedur, dan panduan yang kompleks serta krusial untuk menjaga integritas dan aksesibilitas rekod. Namun, banyaknya informasi yang harus diingat seringkali menyulitkan dalam mengingat langkah-langkah atau detail tertentu, terutama ketika menangani tugas-tugas yang jarang atau tidak sering dilakukan. Hal ini dapat mengakibatkan ketidakefisienan atau kesalahan dalam proses kearsipan dan pengelolaan rekod.
 
+        Sebagai contoh, bayangkan seorang staf yang sedang mempersiapkan dokumen langka untuk digitalisasi tetapi lupa dengan prosedur penanganan yang spesifik. Alih-alih harus membuka-buka halaman manual, mereka cukup menanyakan pada chatbot, "Apa proses untuk mendigitalisasi dokumen yang rapuh?" Aplikasi ini akan langsung mengambil langkah-langkah yang relevan—seperti menggunakan sarung tangan, menyiapkan pemindai, dan mengatur pencahayaan—dan menyajikannya dalam format yang jelas dan mudah diikuti.
+
+        Arsipy adalah asisten AI yang dibangun untuk itu, membantu Anda mengakses dan memahami manual arsip dengan lebih efektif. Aplikasi ini menggunakan teknologi RAG (Retrieval-Augmented Generation) plus analisis gambar untuk menguraikan dan mengekstraksi teks dari dokumen tulisan tangan.
+        
         Dengan Arsipy, Anda dapat:
 
         - Mempelajari dan merujuk manual arsip melalui chatbot interaktif yang mudah digunakan.
@@ -398,15 +402,23 @@ def show_chat_interface(llm, prompt):
 
         ### 💻 Teknologi
         - **Backend**: Python, ChromaDB, LangChain
-        - **AI Models**: llama-3.3-70b-versatile, Google Gemini
+        - **AI Models**: llama-3.3-70b-versatile (Groq's API), Google Gemini 2.0 Flash
         - **OCR**: pytesseract, Tesseract OCR
         - **Frontend**: Streamlit
         - **Database**: Vector Store dengan Google AI Embeddings
 
         """)
+        
+        st.subheader("⚠️ Penting")
+        st.info("""
+        * Aplikasi ini tidak merekam percakapan
+        * Chatbot hanya menjawab pertanyaan seputar isi dari dokumen manual arsip
+        * Untuk informasi lebih lanjut, silakan hubungi developer
+        """)
         # Footer
         st.markdown("---")
         st.markdown("Built by Adnuri Mohamidi with help from AI :orange_heart:", help="cyberariani@gmail.com")
+    
     with tab3:
         st.subheader("📝 Panduan Dasar")
         st.markdown("""
@@ -506,7 +518,11 @@ def show_chat_interface(llm, prompt):
         st.markdown("Built by Adnuri Mohamidi with help from AI :orange_heart:", help="cyberariani@gmail.com")    
         
     with tab5:
+        st.subheader("⚠️ Penting")
+        st.info("""
+        Fitur ini direncanakan berkembang menjadi aplikasi terpisah, yang didedikasikan untuk arsiparis, sejarahwan, dan peneliti, untuk memenuhi kebutuhan mereka yang unik. Karena mereka sering bekerja dengan kombinasi materi cetak dan tulisan tangan, aplikasi ini akan menyediakan alat dan fitur yang diperkhususkan untuk memudahkan alur kerja, meningkatkan penelitian, dan memudahkan temu-kembali informasi.
         
+        """)
         image_analyzer_main()  # Call the imported image analyzer function
         
         # Footer
