@@ -488,7 +488,7 @@ def show_chat_interface(llm, prompt):
         ### 🏛️ Sumber Utama
         
         #### Repositori Universitas Terbuka (UT)
-        - Manual arsip dan dokumen akademik
+        - Modul ajar kearsipan dan dokumen akademik
         - Panduan pengelolaan arsip institusional
         - Standar prosedur kearsipan
         - [Akses Repositori UT](http://repository.ut.ac.id)
@@ -520,7 +520,7 @@ def show_chat_interface(llm, prompt):
     with tab5:
         st.subheader("⚠️ Penting")
         st.info("""
-        Fitur ini direncanakan berkembang menjadi aplikasi terpisah, yang didedikasikan untuk arsiparis, sejarahwan, dan peneliti, untuk memenuhi kebutuhan mereka yang unik. Karena mereka sering bekerja dengan kombinasi materi cetak dan tulisan tangan, aplikasi ini akan menyediakan alat dan fitur yang diperkhususkan untuk memudahkan alur kerja, meningkatkan penelitian, dan memudahkan temu-kembali informasi.
+        Fitur ini rencananya akan dikembangkan menjadi aplikasi mandiri yang dirancang khusus untuk arsiparis, sejarawan, dan peneliti guna memenuhi kebutuhan unik mereka. Mengingat mereka sering bekerja dengan gabungan materi cetak dan tulisan tangan, aplikasi ini akan menyediakan alat dan fitur khusus untuk mempermudah alur kerja, mendukung penelitian, dan meningkatkan temu balik informasi.
         
         """)
         image_analyzer_main()  # Call the imported image analyzer function
