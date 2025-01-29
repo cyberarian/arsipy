@@ -30,6 +30,78 @@ import toml
 import chromadb
 import sqlite3
 from image_analyzer import image_analyzer_main
+from huggingface_hub import InferenceClient
+from langchain_core.callbacks.manager import CallbackManager
+from langchain_core.language_models.llms import LLM
+from typing import Any, List, Optional
+class DeepSeekLLM(LLM):
+    """Custom LLM class for DeepSeek models from HuggingFace"""
+    
+    client: InferenceClient
+    model: str
+    temperature: float = 0.7
+    max_tokens: int = 512
+    
+    def __init__(
+        self,
+        model: str,
+        api_key: str,
+        temperature: float = 0.7,
+        max_tokens: int = 512,
+        callback_manager: Optional[CallbackManager] = None,
+    ):
+        super().__init__(callback_manager=callback_manager)
+        self.client = InferenceClient(token=api_key)
+        self.model = model
+        self.temperature = temperature
+        self.max_tokens = max_tokens
+    
+    @property
+    def _llm_type(self) -> str:
+        return "deepseek"
+    
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> str:
+        response = self.client.text_generation(
+            prompt,
+            model=self.model,
+            max_new_tokens=self.max_tokens,
+            temperature=self.temperature,
+            stop_sequences=stop or [],
+            **kwargs
+        )
+        return response
+
+# Modify the get_llm_model function
+def get_llm_model(model_name: str):
+    """
+    Initialize and return the specified LLM model
+    """
+    models = {
+        "llama-3.3-70b-versatile": lambda: ChatGroq(
+            groq_api_key=os.getenv('GROQ_API_KEY'),
+            model_name="llama-3.3-70b-versatile"
+        ),
+        "deepseek-coder": lambda: DeepSeekLLM(
+            model="deepseek-ai/deepseek-r1",
+            api_key=os.getenv('HUGGINGFACE_API_KEY'),
+            temperature=0.7,
+            max_tokens=512
+        ),
+        "claude-3-sonnet": lambda: AnthropicLLM(
+            anthropic_api_key=os.getenv('ANTHROPIC_API_KEY'),
+            model_name="claude-3-sonnet-20240229"
+        )
+    }
+    
+    if model_name not in models:
+        raise ValueError(f"Unsupported model: {model_name}")
+        
+    return models[model_name]()
 
 # Set the page layout to wide
 st.set_page_config(layout="wide")
@@ -307,10 +379,24 @@ def show_chat_interface(llm, prompt):
     ])    
     
     with tab1:
+        # Model selection inside chatbot tab
+        model_options = {
+            "Llama-3.3-70b-versatile (Groq)": "llama-3.3-70b-versatile",
+            "DeepSeek-R1 (HuggingFace)": "deepseek-r1",
+        }
+        
+        selected_model = st.selectbox(
+            "Select AI Model",
+            options=list(model_options.keys()),
+            key='model_selector'
+        )
+        
+        # Get the actual model identifier
+        model_id = model_options[selected_model]
+        
         # Add a greeting message
         if not st.session_state.uploaded_file_names:
             st.info("👋 Welcome to Arsipy, your AI-powered guide to archive manuals and handwriting analysis")
-
         
         # Initialize chat history in session state if it doesn't exist
         if 'chat_history' not in st.session_state:
@@ -632,7 +718,16 @@ def main():
             - Do not respond user's questions with irrelevant, misleading, or incomplete information
             - Present table data in a clear and logical format for easy understanding
             - Strive for accuracy and relevance in all responses
-            
+            4. Organize multi-column data:
+            - Identify and align text from multiple columns into a logical, readable format.
+            - Format tabular data into a clean table structure with clear headers and rows.
+            - Use Markdown-style tables for consistency and readability:
+                 ```
+                 | Header 1        | Header 2        | Header 3        |
+                 |-----------------|-----------------|-----------------|
+                 | Row 1, Column 1 | Row 1, Column 2 | Row 1, Column 3 |
+                 | Row 2, Column 1 | Row 2, Column 2 | Row 2, Column 3 |
+                 ```
             lang:id-ID
             
             Context:

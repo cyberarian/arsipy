@@ -18,8 +18,9 @@ memory_profiler
 PyMuPDF
 stqdm
 sentence-transformers
-#huggingface-hub
-#pysqlite3-binary 
+huggingface-hub
+transformers
+pysqlite3-binary 
 gspread
 oauth2client
 pandas

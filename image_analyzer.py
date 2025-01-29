@@ -13,7 +13,7 @@ import logging
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 # Configure Tesseract path
-# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe' # windows
+#pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe' # windows
 pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract' # linux
 
 # Configure logging
@@ -135,17 +135,33 @@ class ImageAnalyzer:
             
             # Enhance with Gemini
             prompt = f"""
-            Enhance and format this OCR text. Fix any errors and maintain structure:
+            Analyze, enhance, and format the provided OCR text. Fix errors, organize multi-column data, and ensure readability. 
+            If the text contains tabular data or comparisons, format it into a clean, readable table structure.
+
             {ocr_text}
-            
+
             Format guidelines:
-            1. Preserve paragraphs
-            2. Fix obvious OCR errors
-            3. Maintain any lists or sections
-            4. Keep original formatting
-            5. Ensure proper punctuation
-            
-            Return enhanced text only.
+            1. **Preserve structure**: Maintain paragraphs, lists, sections, and original formatting.
+            2. **Fix OCR errors**: Correct obvious mistakes (e.g., misspellings, incorrect characters).
+            3. **Organize multi-column data**:
+               - Identify and align text from multiple columns into a logical, readable format.
+               - Format tabular data into a clean table structure with clear headers and rows.
+               - Use Markdown-style tables for consistency and readability:
+                 ```
+                 | Header 1       | Header 2       | Header 3       |
+                 |----------------|----------------|----------------|
+                 | Row 1, Column 1 | Row 1, Column 2 | Row 1, Column 3 |
+                 | Row 2, Column 1 | Row 2, Column 2 | Row 2, Column 3 |
+                 ```
+            4. **Ensure consistency**:
+               - Use proper punctuation, capitalization, and grammar.
+               - Standardize formatting for dates, numbers, and special characters.
+            5. **Enhance readability**:
+               - Break long blocks of text into smaller paragraphs where appropriate.
+               - Use bullet points or numbered lists for better clarity.
+               - Bold headers and key terms for emphasis.
+
+            Return the enhanced and formatted text only, ensuring it is tidy, easy to read, and well-structured.
             """
             
             gemini_response = self.model_manager.gemini_model.generate_content([
