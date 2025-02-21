@@ -1,6 +1,6 @@
-__import__('pysqlite3')
-import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+#__import__('pysqlite3')
+#import sys
+#sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 import streamlit as st
 import os
 import time
@@ -13,12 +13,12 @@ import sys
 import shutil
 from stqdm import stqdm
 from contextlib import contextmanager
-from typing import List
+from typing import List, Any, Dict, Optional, Set, Tuple, Union
 from langchain_groq import ChatGroq
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate
-from langchain.chains import create_retrieval_chain
+from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
+from langchain.chains import create_retrieval_chain, LLMChain, RetrievalQA, StuffDocumentsChain
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 from langchain.schema import Document
@@ -28,28 +28,34 @@ from streamlit.runtime.caching import cache_data, cache_resource
 from datetime import datetime
 import toml
 import chromadb
-import sqlite3
+#import sqlite3
 from image_analyzer import image_analyzer_main
 from huggingface_hub import InferenceClient
 from langchain_core.callbacks.manager import CallbackManager
 from langchain_core.language_models.llms import LLM
-from typing import Any, List, Optional
+from langchain_core.retrievers import BaseRetriever
+
+# Add these imports at the top
+from utils.cache_manager import CacheManager
+from utils.security import SecurityManager
+from utils.monitoring import SystemMonitor
+
 class DeepSeekLLM(LLM):
     """Custom LLM class for DeepSeek models from HuggingFace"""
     
     client: InferenceClient
     model: str
-    temperature: float = 0.7
+    temperature: float = 0.6
     max_tokens: int = 512
     
     def __init__(
         self,
         model: str,
         api_key: str,
-        temperature: float = 0.7,
+        temperature: float = 0.6,
         max_tokens: int = 512,
         callback_manager: Optional[CallbackManager] = None,
-    ):
+    ) -> None:
         super().__init__(callback_manager=callback_manager)
         self.client = InferenceClient(token=api_key)
         self.model = model
@@ -77,7 +83,7 @@ class DeepSeekLLM(LLM):
         return response
 
 # Modify the get_llm_model function
-def get_llm_model(model_name: str):
+def get_llm_model(model_name: str) -> Union[LLM, Any]:
     """
     Initialize and return the specified LLM model
     """
@@ -89,13 +95,15 @@ def get_llm_model(model_name: str):
         "deepseek-coder": lambda: DeepSeekLLM(
             model="deepseek-ai/deepseek-r1",
             api_key=os.getenv('HUGGINGFACE_API_KEY'),
-            temperature=0.7,
+            temperature=0.5,
             max_tokens=512
         ),
-        "claude-3-sonnet": lambda: AnthropicLLM(
-            anthropic_api_key=os.getenv('ANTHROPIC_API_KEY'),
-            model_name="claude-3-sonnet-20240229"
-        )
+        "smallthinker": lambda: DeepSeekLLM(
+            model="PowerInfer/SmallThinker-3B-Preview",
+            api_key=os.getenv('HUGGINGFACE_API_KEY'),
+            temperature=0.5,
+            max_tokens=512
+        ),       
     }
     
     if model_name not in models:
@@ -103,6 +111,70 @@ def get_llm_model(model_name: str):
         
     return models[model_name]()
 
+def get_rag_chain(llm: Union[LLM, Any], retriever: BaseRetriever) -> RetrievalQA:
+    """
+    Create an enhanced RAG pipeline with internal reasoning
+    """
+    # Define system prompt with hidden reasoning
+    SYSTEM_PROMPT = """You are Arsipy, an expert archival documentation assistant.
+    Analyze queries using this internal process (do not show in response):
+    1. Topic identification
+    2. Context evaluation
+    3. Evidence gathering
+    4. Response formulation
+    
+    Keep responses focused, clear, and professional."""
+    
+    # Define the QA prompt template with internal reasoning
+    QA_CHAIN_PROMPT = ChatPromptTemplate.from_template("""
+    System: {system_prompt}
+    
+    Context: {context}
+    
+    Question: {question}
+    
+    Instructions:
+    1. INTERNAL REASONING (Do not include in response):
+    {{"analysis": {{
+        "topic": "Identify main topic",
+        "requirements": "List key requirements",
+        "evidence": "Locate supporting context",
+        "reasoning": "Connect evidence to answer"
+    }}}}
+
+    2. RESPONSE FORMAT:
+    - Clear direct answer
+    - Supporting evidence
+    - Source citations
+    - Additional context (if needed)
+    
+    Response in id-ID:
+    """)
+    
+    # Set up the chain
+    llm_chain = LLMChain(
+        llm=llm,
+        prompt=QA_CHAIN_PROMPT.partial(system_prompt=SYSTEM_PROMPT),
+        output_key="answer"
+    )
+    
+    document_prompt = PromptTemplate(
+        template="Context:\ncontent:{page_content}\nsource:{source}",
+        input_variables=["page_content", "source"]
+    )
+    
+    qa_chain = RetrievalQA(
+        combine_documents_chain=StuffDocumentsChain(
+            llm_chain=llm_chain,
+            document_prompt=document_prompt,
+            document_variable_name="context",
+            document_separator="\n\n"
+        ),
+        retriever=retriever,
+        return_source_documents=True
+    )
+    
+    return qa_chain
 # Set the page layout to wide
 st.set_page_config(layout="wide")
 
@@ -131,7 +203,7 @@ def memory_track():
     finally:
         gc.collect()
 
-def show_landing_page():
+def show_landing_page() -> None:
     """Display the landing page with all content inside a centered box container."""
     # Set the background image URL
     background_image_url = "assets/logo-transparent3.png"  # Update this path to your image
@@ -186,7 +258,7 @@ def show_landing_page():
     # Close the wrapper
     st.markdown('</div>', unsafe_allow_html=True)
 
-def setup_admin_sidebar():
+def setup_admin_sidebar() -> None:
     """Setup admin authentication and controls in sidebar"""
     if 'admin_authenticated' not in st.session_state:
         st.session_state.admin_authenticated = False
@@ -215,7 +287,7 @@ def setup_admin_sidebar():
             st.divider()
             show_admin_controls()
 
-def show_admin_controls():
+def show_admin_controls() -> None:
     """Display admin controls when authenticated"""
     st.sidebar.header("Document Management")
     
@@ -259,8 +331,20 @@ def show_admin_controls():
                 st.sidebar.error(f"Error during reset: {str(e)}")
                 logger.error(traceback.format_exc())
 
-def extract_text_from_pdf(pdf_file) -> str:
-    """Extract text content from a PDF file"""
+def extract_text_from_pdf(pdf_file: Any) -> str:
+    """
+    Extract text content from a PDF file
+    
+    Args:
+        pdf_file: File-like object containing PDF data
+        
+    Returns:
+        str: Extracted text from PDF
+        
+    Raises:
+        ValueError: If extracted text is empty
+        Exception: For PDF processing errors
+    """
     try:
         pdf_document = fitz.open(stream=pdf_file.read(), filetype="pdf")
         text = ""
@@ -277,8 +361,20 @@ def extract_text_from_pdf(pdf_file) -> str:
         if 'pdf_document' in locals():
             pdf_document.close()
 
-def get_document_text(file) -> str:
-    """Get text content from a file based on its type"""
+def get_document_text(file: Any) -> str:
+    """
+    Get text content from a file based on its type
+    
+    Args:
+        file: File-like object to extract text from
+        
+    Returns:
+        str: Extracted text content
+        
+    Raises:
+        ValueError: For unsupported file types or empty content
+        Exception: For text extraction errors
+    """
     try:
         if file.type == "application/pdf":
             text = extract_text_from_pdf(file)
@@ -295,7 +391,13 @@ def get_document_text(file) -> str:
         logger.error(f"Error extracting text from {file.name}: {str(e)}")
         raise
 
-def process_uploaded_files(uploaded_files: List):
+def process_uploaded_files(uploaded_files: List[Any]) -> None:
+    """
+    Process uploaded files and add them to the vector store
+    
+    Args:
+        uploaded_files: List of uploaded file objects
+    """
     try:
         # Validate input files
         if not uploaded_files:
@@ -357,12 +459,12 @@ def process_uploaded_files(uploaded_files: List):
         logger.error(traceback.format_exc())
         raise
 
-def clear_cache():
+def clear_cache() -> None:
     """Clear all cached data"""
     cache_data.clear()
     cache_resource.clear()
     
-def show_chat_interface(llm, prompt):
+def show_chat_interface(llm: Union[LLM, Any]) -> None:
     """Display the main chat interface"""
     # Add logo
     col1, col2, col3 = st.columns([1,100,1])
@@ -382,7 +484,8 @@ def show_chat_interface(llm, prompt):
         # Model selection inside chatbot tab
         model_options = {
             "Llama-3.3-70b-versatile (Groq)": "llama-3.3-70b-versatile",
-            "DeepSeek-R1 (HuggingFace)": "deepseek-r1",
+            "DeepSeek-R1 (HuggingFace)": "deepseek-coder",
+            "SmallThinker-3B (HuggingFace)": "smallthinker",
         }
         
         selected_model = st.selectbox(
@@ -413,7 +516,7 @@ def show_chat_interface(llm, prompt):
             st.write("Answer:", a)
             st.divider()
         
-        if submit_button and prompt1:  # Only process if there's a question and the button is clicked
+        if submit_button and prompt1:
             try:
                 with memory_track():
                     if st.session_state.vectorstore is None:
@@ -421,39 +524,57 @@ def show_chat_interface(llm, prompt):
                     
                     vectorstore = st.session_state.vectorstore
                     if len(vectorstore.get()['ids']) > 0:
-                        document_chain = create_stuff_documents_chain(llm, prompt)
-                        retriever = vectorstore.as_retriever()
-                        retrieval_chain = create_retrieval_chain(retriever, document_chain)
+                        retriever = vectorstore.as_retriever(
+                            search_type="similarity",
+                            search_kwargs={"k": 4}
+                        )
                         
-                        with st.spinner('Searching through documents...'):
+                        qa_chain = get_rag_chain(llm, retriever)
+                        
+                        # Enhanced spinner messages
+                        spinner_messages = [
+                            "Analyzing your question...",
+                            "Searching through documents...",
+                            "Processing relevant information...",
+                            "Formulating response..."
+                        ]
+                        
+                        with st.spinner(spinner_messages[0]):
+                            # Start timer
                             start = time.process_time()
-                            response = retrieval_chain.invoke({'input': prompt1})
+                            
+                            # Simulate analysis steps with multiple spinners
+                            for i, message in enumerate(spinner_messages[1:], 1):
+                                time.sleep(0.5)  # Brief pause for UX
+                                st.spinner(message)
+                            
+                            # Get actual response
+                            response = qa_chain.invoke({'query': prompt1})
                             elapsed_time = time.process_time() - start
                             
-                            # Add the new Q&A to the chat history
-                            st.session_state.chat_history.append((prompt1, response['answer']))
-                            
-                            # Display the latest response
-                            st.write("Latest Response:")
-                            st.write(response['answer'])
+                            # Update chat history and display
+                            st.session_state.chat_history.append((prompt1, response['result']))
+                            st.write("Response:")
+                            st.write(response['result'])
                             st.write(f"Response time: {elapsed_time:.2f} seconds")
                             
-                            # Clear the input box by rerunning the app
                             st.rerun()
+                            
                     else:
                         st.warning("No documents found in the database. Please ask an admin to upload some documents.")
+                        
             except Exception as e:
                 st.error(f"Error processing question: {str(e)}")
                 logger.error(traceback.format_exc())
+
+    # Add a clear chat history button
+    if st.session_state.chat_history and st.button("Clear Chat History"):
+        st.session_state.chat_history = []
+        st.rerun()
         
-        # Add a clear chat history button
-        if st.session_state.chat_history and st.button("Clear Chat History"):
-            st.session_state.chat_history = []
-            st.rerun()
-            
-        # Footer
-        st.markdown("---")
-        st.markdown("Built by Adnuri Mohamidi with help from AI :orange_heart:", help="cyberariani@gmail.com")
+    # Footer
+    st.markdown("---")
+    st.markdown("Built by Adnuri Mohamidi with help from AI :orange_heart:", help="cyberariani@gmail.com")
     with tab2:
         st.write("""
         ### 🎯 Tentang Arsipy
@@ -586,6 +707,15 @@ def show_chat_interface(llm, prompt):
         - Best practices global
         - [Akses WBG Roadmap](https://www.worldbank.org/en/archive/aboutus/records-management-roadmap)
         
+        #### Archive Principles and Practice: an introduction to archives for non-archivists
+        - [url](https://cdn.nationalarchives.gov.uk/documents/archives/archive-principles-and-practice-an-introduction-to-archives-for-non-archivists.pdf)
+        
+        #### Guide to Archiving Electronic Records: Edition 2 (Health Sciences Records and Archives Association, UK)
+        - [url](https://the-hsraa.org/wp-content/uploads/2023/10/A-Guide-to-the-Archiving-of-Electronic-Records-A4-Version-for-Publication.pdf)
+        
+        #### Principles of Access to Archives (International Council on Archives, 2012)
+        - [url](https://ica.org/app/uploads/2023/12/ICA_Access-principles_EN.pdf)
+        
         #### Regulasi Indonesia
         - UU No. 43 Tahun 2009 tentang Kearsipan
         - Peraturan Pemerintah No. 28/2012 tentang Pelaksanaan Undang-Undang Nomor 43 Tahun 2009 tentang Kearsipan;
@@ -614,8 +744,36 @@ def show_chat_interface(llm, prompt):
         # Footer
         st.markdown("---")
         st.markdown("Built by Adnuri Mohamidi with help from AI :orange_heart:", help="cyberariani@gmail.com")
-def initialize_or_load_vectorstore():
-    """Initialize or load the vector store for document embeddings"""
+
+# Initialize the new components
+cache_manager = CacheManager()
+security_manager = SecurityManager()
+system_monitor = SystemMonitor()
+
+# Then modify the main chat interface function to use these components:
+@system_monitor.monitor_performance
+@cache_manager.cache_query(ttl=3600)
+def process_chat_query(prompt: str, vectorstore: Any, llm: Any) -> dict:
+    # Sanitize input
+    prompt = security_manager.sanitize_input(prompt)
+    
+    # Check rate limiting
+    if not security_manager.rate_limiter(st.session_state.get('client_ip', '0.0.0.0')):
+        raise Exception("Rate limit exceeded. Please wait before sending more requests.")
+    
+    # Rest of the existing chat processing code
+    # ...existing code...
+
+def initialize_or_load_vectorstore() -> Chroma:
+    """
+    Initialize or load the vector store for document embeddings
+    
+    Returns:
+        Chroma: Vector store instance
+        
+    Raises:
+        Exception: For initialization errors
+    """
     try:
         # Initialize embeddings
         embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
@@ -633,7 +791,8 @@ def initialize_or_load_vectorstore():
         logger.error(traceback.format_exc())
         raise
     
-def main():
+def main() -> None:
+    """Main application entry point"""
     # Disable ChromaDB telemetry
     os.environ['ANONYMIZED_TELEMETRY'] = 'False'
     
@@ -678,63 +837,7 @@ def main():
             model_name="llama-3.3-70b-versatile"
         )
         
-        prompt = ChatPromptTemplate.from_template("""
-            Your role: Your name is Arsipy, Chatbot Pintar untuk Referensi Manual Arsip dan Analisis Tulisan Tangan
-            Language: Dynamically adapt your responses to match the user's language with formal tone
-            Function: Assist the user in finding relevant information within provided documents, including names, titles, locations, history, tables, images, and other relevant texts. Keep responses brief and accurate; provide detailed explanations only when specifically requested.
-            Greetings: respond to the greetings accordingly.
-            
-            When a user inquires about the source of the document, provide the exact title as written in the top or beginning of the document, including any subtitles or headings. Ensure that the title is:
-
-            Accurately extracted: Retrieve the title from the document with high precision, without introducing any errors or modifications.
-            Exactly as written: Preserve the original wording, punctuation, and formatting of the title, including any special characters or symbols.
-            Complete and comprehensive: Include any subtitles, headings, or other relevant information that appears at the beginning of the document, to provide context and clarity.
-            Example Response:
-
-            If the document begins with the title "2022 Annual Report: Financial Highlights and Strategic Outlook", the system should respond with the exact same title, without any modifications or abbreviations.
-
-            Input:
-
-            User query: "What is the source of this document?"
-            Document text: "2022 Annual Report: Financial Highlights and Strategic Outlook"
-            Output:
-
-            System response: "The source of this document is: 2022 Annual Report: Financial Highlights and Strategic Outlook"
-
-            Guidelines:
-            1. Format responses as follows:
-            - Use bullet points for steps, procedures, or stages
-            - Present sequential information in numbered lists
-            - Break down complex answers into clear bullet points
-            
-            2. Response Structure:
-            - Start with direct answer
-            - List steps/procedures with bullets
-            - End with relevant context if needed
-                                
-            3. Content Rules:
-            - Base your responses strictly on the document's content and context
-            - Provide answers that directly address the user's question only
-            - Do not respond user's questions with irrelevant, misleading, or incomplete information
-            - Present table data in a clear and logical format for easy understanding
-            - Strive for accuracy and relevance in all responses
-            4. Organize multi-column data:
-            - Identify and align text from multiple columns into a logical, readable format.
-            - Format tabular data into a clean table structure with clear headers and rows.
-            - Use Markdown-style tables for consistency and readability:
-                 ```
-                 | Header 1        | Header 2        | Header 3        |
-                 |-----------------|-----------------|-----------------|
-                 | Row 1, Column 1 | Row 1, Column 2 | Row 1, Column 3 |
-                 | Row 2, Column 1 | Row 2, Column 2 | Row 2, Column 3 |
-                 ```
-            lang:id-ID
-            
-            Context:
-            {context}
-            
-            Question: {input}
-            """)
+        
             
     except Exception as e:
         st.error(f"Error initializing LLM: {str(e)}")
@@ -744,7 +847,7 @@ def main():
     setup_admin_sidebar()
     
     # Show main chat interface
-    show_chat_interface(llm, prompt)
+    show_chat_interface(llm)
     
 if __name__ == "__main__":
     main()

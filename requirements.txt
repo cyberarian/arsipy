@@ -19,8 +19,7 @@ PyMuPDF
 stqdm
 sentence-transformers
 huggingface-hub
-transformers
-pysqlite3-binary 
+#pysqlite3-binary 
 gspread
 oauth2client
 pandas
@@ -35,3 +34,8 @@ textblob
 scipy
 nltk
 scikit-learn
+pydantic
+werkzeug
+python-docx
+openpyxl
+# Remove easyocr as it's no longer needed
