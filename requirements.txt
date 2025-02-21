@@ -39,3 +39,4 @@ werkzeug
 python-docx
 openpyxl
 # Remove easyocr as it's no longer needed
+PyJWT
