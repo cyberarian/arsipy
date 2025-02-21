@@ -1,6 +1,6 @@
-#__import__('pysqlite3')
-#import sys
-#sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 import streamlit as st
 import os
 import time
@@ -28,7 +28,7 @@ from streamlit.runtime.caching import cache_data, cache_resource
 from datetime import datetime
 import toml
 import chromadb
-#import sqlite3
+import sqlite3
 from image_analyzer import image_analyzer_main
 from huggingface_hub import InferenceClient
 from langchain_core.callbacks.manager import CallbackManager
