@@ -622,10 +622,7 @@ def show_chat_interface(llm: Union[LLM, Any]) -> None:
         * Chatbot hanya menjawab pertanyaan seputar isi dari dokumen manual arsip
         * Untuk informasi lebih lanjut, silakan hubungi developer
         """)
-        # Footer
-        st.markdown("---")
-        st.markdown("Built by Adnuri Mohamidi with help from AI :orange_heart:", help="cyberariani@gmail.com")
-    
+  
     with tab3:
         st.subheader("📝 Panduan Dasar")
         st.markdown("""
@@ -681,10 +678,6 @@ def show_chat_interface(llm: Union[LLM, Any]) -> None:
         - Perbaiki kualitas gambar
         - Coba analisis ulang
             """)
-        
-        # Footer
-        st.markdown("---")
-        st.markdown("Built by Adnuri Mohamidi with help from AI :orange_heart:", help="cyberariani@gmail.com")
     
     with tab4:
         st.title("📚 Sumber Dokumen")
@@ -727,11 +720,7 @@ def show_chat_interface(llm: Union[LLM, Any]) -> None:
         - Pembaruan berkala
         - Verifikasi konten
         - Audit kepatuhan
-        """)
-        
-        # Footer
-        st.markdown("---")
-        st.markdown("Built by Adnuri Mohamidi with help from AI :orange_heart:", help="cyberariani@gmail.com")    
+        """)      
         
     with tab5:
         st.subheader("⚠️ Penting")
@@ -739,11 +728,7 @@ def show_chat_interface(llm: Union[LLM, Any]) -> None:
         Fitur ini rencananya akan dikembangkan menjadi aplikasi mandiri yang dirancang khusus untuk arsiparis, sejarawan, dan peneliti guna memenuhi kebutuhan unik mereka. Mengingat mereka sering bekerja dengan gabungan materi cetak dan tulisan tangan, aplikasi ini akan menyediakan alat dan fitur khusus untuk mempermudah alur kerja, mendukung penelitian, dan meningkatkan temu balik informasi.
         
         """)
-        image_analyzer_main()  # Call the imported image analyzer function
-        
-        # Footer
-        st.markdown("---")
-        st.markdown("Built by Adnuri Mohamidi with help from AI :orange_heart:", help="cyberariani@gmail.com")
+        image_analyzer_main()  # Call the imported image analyzer function        
 
 # Initialize the new components
 cache_manager = CacheManager()
