@@ -567,10 +567,10 @@ def show_chat_interface(llm: Union[LLM, Any]) -> None:
                 st.error(f"Error processing question: {str(e)}")
                 logger.error(traceback.format_exc())
 
-    # Add a clear chat history button
-    if st.session_state.chat_history and st.button("Clear Chat History"):
-        st.session_state.chat_history = []
-        st.rerun()
+        # Add a clear chat history button
+        if st.session_state.chat_history and st.button("Clear Chat History"):
+            st.session_state.chat_history = []
+            st.rerun()
         
     # Footer
     st.markdown("---")
