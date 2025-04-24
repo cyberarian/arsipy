@@ -105,7 +105,7 @@ def show_landing_page():
 
     # Add Streamlit button
     if st.button("Masuk ke Sistem", key="enter_system"):
-        st.session_state['show_admin'] = True
+        st.session_state['show_app'] = True
         st.rerun()
 
     # Close the containers

@@ -43,4 +43,5 @@ uvicorn
 pydantic-settings
 python-multipart
 # Remove easyocr as it's no longer needed
-requests beautifulsoup4
+beautifulsoup4
+langdetect
