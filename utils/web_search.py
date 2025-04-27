@@ -7,8 +7,6 @@ from urllib.parse import quote_plus, urlparse, urljoin
 import traceback
 import time
 import os
-
-from langdetect import detect, LangDetectException
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -25,56 +23,56 @@ class ArchivalWebSearch:
     ]
     ENGLISH_QUERY_SOURCES = {'ICA', 'SAA', 'ISO'}
 
+    # --- MODIFIED METHOD ---
     def _translate_query_if_needed(self, query: str) -> Optional[str]:
-        """Detects if query is Indonesian and translates it to English using an LLM."""
-        # --- (Keep the existing _translate_query_if_needed method as is) ---
+        """
+        Assumes the query is Indonesian and attempts to translate it to English using an LLM.
+        Bypasses language detection.
+        """
+        logger.info("Assuming query is Indonesian, attempting translation to English...")
         try:
-            lang = detect(query)
-            logger.info(f"Detected query language: {lang}")
-            if lang == 'id':
-                logger.info("Query is Indonesian, attempting translation to English...")
-                try:
-                    translate_llm = ChatGroq(
-                        groq_api_key=os.getenv('GROQ_API_KEY'),
-                        model_name="llama3-8b-8192",
-                        temperature=0.1
-                    )
-                    prompt_template = ChatPromptTemplate.from_template(
-                        "Translate the following Indonesian text to English. Output only the translated text, nothing else:\n\n{text}"
-                    )
-                    chain = prompt_template | translate_llm
-                    response = chain.invoke({"text": query})
+            # Directly attempt translation using the LLM
+            translate_llm = ChatGroq(
+                groq_api_key=os.getenv('GROQ_API_KEY'),
+                model_name="llama3-8b-8192", # Using a fast model for translation
+                temperature=0.1
+            )
+            prompt_template = ChatPromptTemplate.from_template(
+                "Translate the following Indonesian text to English. Output only the translated text, nothing else:\n\n{text}"
+            )
+            chain = prompt_template | translate_llm
+            response = chain.invoke({"text": query})
 
-                    if response and hasattr(response, 'content'):
-                        translated_query = response.content.strip()
-                        if translated_query and translated_query.lower() != query.lower():
-                            logger.info(f"Successfully translated query to: '{translated_query}'")
-                            return translated_query
-                        else:
-                            logger.warning("Translation resulted in empty or identical query. Using original.")
-                            return None
-                    else:
-                        logger.error("LLM translation response was empty or invalid.")
-                        return None
-                except Exception as llm_err:
-                    logger.error(f"LLM translation failed: {llm_err}")
-                    return None
+            if response and hasattr(response, 'content'):
+                translated_query = response.content.strip()
+                # Important Check: Only return if translation is successful AND different from original
+                if translated_query and translated_query.lower() != query.lower():
+                    logger.info(f"Successfully translated query to: '{translated_query}'")
+                    return translated_query
+                else:
+                    # Log if translation was empty or same as original (e.g., if input was already English)
+                    logger.warning(f"Translation resulted in empty or identical query ('{translated_query}'). Using original query for English sources.")
+                    return None # Indicate translation wasn't useful/successful
             else:
-                return None
-        except LangDetectException:
-            logger.warning("Could not reliably detect query language. Assuming no translation needed.")
-            return None
-        except Exception as detect_err:
-            logger.error(f"Error during language detection: {detect_err}")
-            return None
+                logger.error("LLM translation response was empty or invalid.")
+                return None # Indicate translation failed
+        except Exception as llm_err:
+            # Log any error during the LLM call
+            logger.error(f"LLM translation failed: {llm_err}")
+            logger.debug(traceback.format_exc()) # Add traceback for debugging if needed
+            return None # Indicate translation failed
+    # --- END MODIFIED METHOD ---
 
 
     def search(self, query: str, max_results_per_source: int = 2, total_max_results: int = 5) -> List[Dict]:
         """Search specified archival/standards websites and return relevant content, with auto-translation."""
         results = []
         original_encoded_query = quote_plus(query)
+
+        # --- Translation attempt happens here, assuming Indonesian ---
         translated_english_query = self._translate_query_if_needed(query)
         encoded_english_query = quote_plus(translated_english_query) if translated_english_query else None
+        # ---
 
         search_endpoint_templates = {
             'ICA': "https://www.ica.org/en/search-results?search_api_fulltext={query_param}",
@@ -96,10 +94,12 @@ class ArchivalWebSearch:
             if len(results) >= total_max_results:
                 break
 
-            current_encoded_query = original_encoded_query
+            current_encoded_query = original_encoded_query # Default to original query
             query_log_info = f"(Original: '{query}')"
+
+            # Use translated query ONLY for designated English sources AND if translation was successful/different
             if source_name in self.ENGLISH_QUERY_SOURCES and encoded_english_query:
-                current_encoded_query = encoded_english_query
+                current_encoded_query = encoded_english_query # Use the translated query
                 query_log_info = f"(Translated: '{translated_english_query}')"
             # No need for elif/else, original is default
 
@@ -110,6 +110,7 @@ class ArchivalWebSearch:
 
             logger.info(f"Searching {source_name} {query_log_info} with URL: {url}")
             try:
+                # ... (rest of the search and parsing logic remains the same) ...
                 # time.sleep(0.5) # Optional delay
                 response = requests.get(url, headers=specific_headers, timeout=25)
                 response.raise_for_status()

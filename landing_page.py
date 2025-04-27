@@ -92,13 +92,14 @@ def show_landing_page():
         <div class="landing-content">
             <h1>Arsipy</h1>
             <h3>Selamat Datang di Arsipy, AI-Powered Archive Assistant</h3>
+             <p>
+                Mengelola arsip dengan baik bukan hanya soal keteraturan, tetapi juga tentang efisiensi, akurasi, dan akuntabilitas. Di sinilah Arsipy hadir, sebagai asisten cerdas berbasis teknologi AI dan Retrieval-Augmented Generation (RAG), untuk membantu Anda mengakses dan memahami <b>basis pengetahuan kearsipan Anda</b> secara lebih cepat dan terpercaya.
+            </p>  
             <p>
-                Mengelola arsip dengan baik bukan hanya soal keteraturan, tetapi juga tentang efisiensi, akurasi, dan akuntabilitas. Di sinilah Arsipy hadir, sebagai asisten cerdas berbasis teknologi AI dan Retrieval-Augmented Generation (RAG), untuk membantu Anda mengakses dan memahami manual arsip secara lebih cepat dan terpercaya.
+                Melalui <strong>chatbot interaktif</strong>, Arsipy menjawab pertanyaan Anda dengan memprioritaskan informasi dari <strong>koleksi dokumen internal</strong> (seperti manual atau standar) yang dikelola oleh admin. Untuk memberikan jawaban yang lebih komprehensif atau jika informasi tidak tersedia secara lokal, Arsipy secara cerdas melakukan pencarian pada <strong>sumber web kearsipan terpercaya</strong> (seperti ICA, SAA, ANRI, dan ISO) untuk <strong>memperkaya jawaban</strong> atau memberikan respons berbasis web. Selain itu, tab <strong>"Web Insights"</strong> menyediakan alat analisis terpisah untuk riset topik, konten URL, atau dokumen yang Anda unggah.
             </p>
             <p>
-                Melalui chatbot interaktif, Anda bisa mengajukan pertanyaan langsung dan mendapatkan jawaban instan yang bersumber dari koleksi manual arsip yang terstruktur dan terverifikasi.  Fitur web-search membantu Anda menggali wawasan tambahan dari berbagai sumber daring terpercaya, melengkapi informasi yang tersedia di dalam manual arsip.
-            </p>
-            <p>Dengan antarmuka yang sederhana dan akses 24/7, Arsipy dirancang untuk siapa saja yang ingin belajar pengarsipan dengan cara yang lebih efektif.  Mari jelajahi Arsipy dan temukan pengalaman baru dalam memahami dunia kearsipan, langsung dari ujung jari Anda.
+                Dengan antarmuka yang sederhana dan akses 24/7, Arsipy dirancang untuk siapa saja yang ingin belajar pengarsipan dengan cara yang lebih efektif. Mari jelajahi Arsipy dan temukan pengalaman baru dalam memahami dunia kearsipan, langsung dari ujung jari Anda.
             </p>
         <div class="button-container">
     """, unsafe_allow_html=True)
