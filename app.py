@@ -808,7 +808,7 @@ def show_chat_interface(
             "Compound Beta (Groq - Default)": "compound-beta",
             "Llama-4-maverick (Groq - Powerful)": "meta-llama/llama-4-maverick-17b-128e-instruct",
             "Gemini 2.5 Flash (Google)": "gemini-2.5-flash-preview-04-17",
-            "DeepSeek V3 (HuggingFace)": "deepseek-ai/DeepSeek-V3-0324",
+            "DeepSeek-Prover-V2-671B (HuggingFace)": "deepseek-ai/DeepSeek-Prover-V2-671B",
         }
         default_model_display_key = "Compound Beta (Groq - Default)"
         if default_model_display_key not in model_options:
