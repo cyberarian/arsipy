@@ -129,19 +129,19 @@ def get_llm_model(model_name: str) -> Union[LLM, Any]:
             groq_api_key=groq_api_key,
             model_name=model_name
         )
-    elif model_name == "deepseek-v3":
+    elif model_name == "DeepSeek-Prover-V2-671B":
         if not huggingface_api_key:
             raise ValueError(f"HUGGINGFACE_API_KEY not found for model {model_name}.")
         return DeepSeekLLM(
-            model="deepseek-ai/DeepSeek-V3-0324",
+            model="deepseek-ai/DeepSeek-Prover-V2-671B",
             api_key=huggingface_api_key,
             temperature=0.5, max_tokens=512
         )
-    elif model_name == "deepseek-coder":
+    elif model_name == "DeepSeek-Prover-V2-671B":
         if not huggingface_api_key:
             raise ValueError(f"HUGGINGFACE_API_KEY not found for model {model_name}.")
         return DeepSeekLLM(
-            model="deepseek-ai/DeepSeek-V3-0324", # Confirm model if specific coder exists
+            model="deepseek-ai/DeepSeek-Prover-V2-671B", # Confirm model if specific coder exists
             api_key=huggingface_api_key,
             temperature=0.5, max_tokens=512
         )
