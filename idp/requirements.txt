@@ -1,0 +1,17 @@
+streamlit
+groq
+mistralai
+google-generativeai
+pytesseract
+Pillow
+PyMuPDF
+sentence-transformers  # <-- Add for embeddings
+faiss-cpu            # <-- Add for vector search (CPU version)
+yake
+numpy
+markdownify
+pypdf2
+rank_bm25
+langchain
+pdfplumber
+python-docx

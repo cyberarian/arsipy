@@ -1,0 +1,131 @@
+[theme]
+primaryColor = "#1a73e8"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f8f9fa"
+textColor = "#262730"
+font = "sans serif"
+
+[server]
+maxUploadSize = 200
+enableXsrfProtection = true
+enableCORS = false
+
+[browser]
+gatherUsageStats = false
+
+[logger]
+level = "error"
+
+[client]
+toolbarMode = "minimal"
+showErrorDetails = false
+
+[runner]
+fastReruns = true
+
+[custom_css]
+css = """
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+/* Base styles */
+body {
+    font-family: 'Roboto', sans-serif;
+    line-height: 1.6;
+    color: #FAFAFA;
+    background-color: #0E1117;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+    color: #FAFAFA;
+    letter-spacing: -0.02em;
+}
+
+/* Container Styling */
+.main .block-container {
+    background-color: #0E1117;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+/* Chat Interface */
+.stChatMessage {
+    background-color: #1E1E1E;
+    color: #FAFAFA;
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin: 1rem 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease;
+}
+
+/* Tabs Styling */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 1rem;
+    background-color: #0E1117;
+    padding: 0.3rem;
+    border-radius: 15px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    height: 50px;
+    border-radius: 28px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    color: #FAFAFA;
+}
+
+.stTabs [data-baseweb="tab"]:hover {
+    background-color: #2D2D2D;
+}
+
+.stTabs [data-baseweb="tab"][aria-selected="true"] {
+    background-color:rgb(36, 40, 44);
+    color: #FFFFFF;
+}
+
+/* Interactive Elements */
+.stButton button,
+button[kind="primary"] {
+    background-color:rgb(19, 85, 143);
+    color: #FFFFFF;
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 500;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.stButton button:hover,
+button[kind="primary"]:hover {
+    background-color: #1976D2;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Form Elements */
+.stTextInput input,
+.stTextArea textarea {
+    background-color: #1E1E1E;
+    color: #FAFAFA;
+    border: 1px solid #2D2D2D;
+    border-radius: 8px;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+    .main .block-container {
+        padding: 1rem;
+    }
+    
+    .stChatMessage {
+        padding: 1rem;
+        margin: 0.5rem 0;
+    }
+    
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.2rem; }
+}
+"""
