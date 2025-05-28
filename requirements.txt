@@ -4,7 +4,6 @@ langchain-community
 langchain-openai
 langchain-ollama
 #pypdf
-#faiss-cpu
 chromadb
 groq
 langchain-groq
@@ -38,7 +37,6 @@ pydantic
 werkzeug
 python-docx
 openpyxl
-fastapi
 uvicorn
 pydantic-settings
 python-multipart
