@@ -809,6 +809,7 @@ def show_chat_interface(
             "Llama-4-maverick (Groq - Powerful)": "meta-llama/llama-4-maverick-17b-128e-instruct",
             "Gemini 2.5 Flash (Google)": "gemini-2.5-flash-preview-04-17",
             "DeepSeek-Prover-V2-671B (HuggingFace)": "deepseek-ai/DeepSeek-Prover-V2-671B",
+            "gpt-oss-120b (HuggingFace)": "openai/gpt-oss-120b",
         }
         default_model_display_key = "Compound Beta (Groq - Default)"
         if default_model_display_key not in model_options:
