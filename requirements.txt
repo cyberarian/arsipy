@@ -20,7 +20,7 @@ PyMuPDF
 stqdm
 sentence-transformers
 huggingface-hub
-#pysqlite3-binary 
+pysqlite3-binary 
 gspread
 oauth2client
 pandas
@@ -44,4 +44,4 @@ uvicorn
 pydantic-settings
 python-multipart
 # Remove easyocr as it's no longer needed
-requests beautifulsoup4
+requests
