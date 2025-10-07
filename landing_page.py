@@ -104,15 +104,15 @@ def show_landing_page():
     """, unsafe_allow_html=True)
 
     # Add Streamlit button
-    if st.button("Masuk ke Sistem", key="enter_system"):
-        st.session_state['show_admin'] = True
-        st.rerun()
+    # Use columns to center the button, which is more reliable than CSS hacks.
+    _, col2, _ = st.columns([1, 1, 1])
+    with col2:
+        if st.button("Masuk ke Sistem", key="enter_system", use_container_width=True):
+            st.session_state['show_admin'] = True
+            st.rerun()
 
     # Close the containers
-    st.markdown("""
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 if __name__ == "__main__":
     show_landing_page()
