@@ -43,5 +43,5 @@ fastapi
 uvicorn
 pydantic-settings
 python-multipart
-# Remove easyocr as it's no longer needed
+jwt
 requests
