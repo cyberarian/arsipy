@@ -4,6 +4,7 @@ langchain-community
 langchain-openai
 langchain-huggingface
 langchain-ollama
+langchain-text-splitters
 #pypdf
 #faiss-cpu
 chromadb
