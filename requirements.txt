@@ -38,7 +38,7 @@ textblob
 scipy
 nltk
 scikit-learn
-pydantic
+pydantic==1.*
 werkzeug
 python-docx
 openpyxl
