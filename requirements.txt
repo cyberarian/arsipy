@@ -1,6 +1,7 @@
 python-dotenv
-langchain==1.0.0
-langchain-community 
+langchain>=0.2.0
+langchain-community>=0.2.0
+langchain-core>=0.2.0
 langchain-openai
 langchain-huggingface
 langchain-ollama
