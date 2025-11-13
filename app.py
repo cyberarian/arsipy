@@ -19,7 +19,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_classic.chains import create_retrieval_chain, LLMChain, RetrievalQA, StuffDocumentsChain
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain.schema import Document
