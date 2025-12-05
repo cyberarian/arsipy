@@ -16,7 +16,7 @@ from contextlib import contextmanager
 from typing import List, Any, Dict, Optional, Set, Tuple, Union
 from langchain_groq import ChatGroq
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain.chains import create_retrieval_chain, LLMChain, RetrievalQA, StuffDocumentsChain
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
