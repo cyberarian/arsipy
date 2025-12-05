@@ -12,6 +12,7 @@ langchain-groq
 beautifulsoup4
 streamlit
 langchain_google_genai
+langchain-text-splitters
 PyPDF2
 langchain-chroma
 #pdfplumber
