@@ -1,5 +1,5 @@
 python-dotenv
-langchain 
+langchain==1.1.2
 langchain-community 
 langchain-openai
 langchain-huggingface # Keep for other models if needed
