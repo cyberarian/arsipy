@@ -20,7 +20,8 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain.chains import create_retrieval_chain, LLMChain, RetrievalQA, StuffDocumentsChain
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_chroma import Chroma
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.globals import set_verbose
 from dotenv import load_dotenv
@@ -28,6 +29,8 @@ from streamlit.runtime.caching import cache_data, cache_resource
 from datetime import datetime
 import toml
 import chromadb
+from langchain_chroma import Chroma
+import markdown
 #import sqlite3
 from image_analyzer import image_analyzer_main
 from huggingface_hub import InferenceClient
@@ -47,6 +50,71 @@ from landing_page import show_landing_page
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
+
+class NvidiaEmbeddings(OpenAIEmbeddings):
+    """
+    Custom LangChain embedding class for NVIDIA's embedding models.
+    
+    This class inherits from OpenAIEmbeddings and is configured to work with
+    NVIDIA's API endpoint by setting a custom base_url. It also handles the
+    `input_type` parameter required by NVIDIA, differentiating between
+    'query' and 'passage' embeddings.
+    """
+    def __init__(self, model: str, nvidia_api_key: str, input_type: str = "passage", **kwargs):
+        # Pass remaining kwargs to the parent OpenAIEmbeddings constructor FIRST
+        super().__init__(
+            model=model,
+            api_key=nvidia_api_key,
+            base_url="https://integrate.api.nvidia.com/v1",
+            **kwargs
+        )
+        # Store NVIDIA-specific parameters AFTER parent init
+        object.__setattr__(self, '_nvidia_api_key', nvidia_api_key)
+        object.__setattr__(self, '_nvidia_input_type', input_type)
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """
+        Embed search docs using NVIDIA's embedding API with input_type='passage'.
+        """
+        from openai import OpenAI
+        
+        # Retrieve stored values using object.__getattribute__
+        nvidia_api_key = object.__getattribute__(self, '_nvidia_api_key')
+        nvidia_input_type = object.__getattribute__(self, '_nvidia_input_type')
+        
+        client = OpenAI(api_key=nvidia_api_key, base_url="https://integrate.api.nvidia.com/v1")
+        
+        embeddings = []
+        for text in texts:
+            response = client.embeddings.create(
+                input=[text],
+                model=self.model,
+                encoding_format="float",
+                extra_body={"input_type": nvidia_input_type, "truncate": "NONE"}
+            )
+            embeddings.append(response.data[0].embedding)
+        
+        return embeddings
+
+    def embed_query(self, text: str) -> List[float]:
+        """
+        Embed query using NVIDIA's embedding API with input_type='query'.
+        """
+        from openai import OpenAI
+        
+        # Retrieve stored values using object.__getattribute__
+        nvidia_api_key = object.__getattribute__(self, '_nvidia_api_key')
+        
+        client = OpenAI(api_key=nvidia_api_key, base_url="https://integrate.api.nvidia.com/v1")
+        
+        response = client.embeddings.create(
+            input=[text],
+            model=self.model,
+            encoding_format="float",
+            extra_body={"input_type": "query", "truncate": "NONE"}
+        )
+        
+        return response.data[0].embedding
 
 class DeepSeekLLM(LLM):
     """Custom LLM class for DeepSeek models from HuggingFace"""
@@ -96,22 +164,22 @@ def get_llm_model(model_name: str) -> Union[LLM, Any]:
     Initialize and return the specified LLM model
     """
     models = {
-        "meta-llama/llama-4-scout-17b-16e-instruct": lambda: ChatGroq(
+        "openai/gpt-oss-120b": lambda: ChatGroq(
             groq_api_key=os.getenv('GROQ_API_KEY'),
-            model_name="ameta-llama/llama-4-scout-17b-16e-instruct"
+            model_name="openai/gpt-oss-120b"
         ),
         "compound-beta": lambda: ChatGroq(
             groq_api_key=os.getenv('GROQ_API_KEY'),
             model_name="compound-beta"
         ),
         "deepseek-coder": lambda: DeepSeekLLM(
-            model="deepseek-ai/DeepSeek-V3-0324",
+            model="deepseek-ai/DeepSeek-V3.2",
             api_key=os.getenv('HUGGINGFACE_API_KEY'),
             temperature=0.5,
             max_tokens=512
         ),
-        "smallthinker": lambda: DeepSeekLLM(
-            model="PowerInfer/SmallThinker-3B-Preview",
+        "Kimi-K2-Thinking": lambda: DeepSeekLLM(
+            model="moonshotai/Kimi-K2-Thinking",
             api_key=os.getenv('HUGGINGFACE_API_KEY'),
             temperature=0.5,
             max_tokens=512
@@ -287,6 +355,34 @@ def show_admin_controls() -> None:
         if st.sidebar.button("Process Documents", key="process_docs_button"):
             process_uploaded_files(uploaded_files, metadata_inputs)
 
+def process_uploaded_files(uploaded_files: List[Any], metadata_inputs: Dict) -> None:
+    """Process uploaded files with enhanced metadata handling"""
+    if not uploaded_files:
+        st.sidebar.warning("No files selected for processing")
+        return
+
+    success_count = 0
+    error_count = 0
+
+    with st.spinner('Processing documents...'):
+        for file in stqdm(uploaded_files):
+            if file.name not in st.session_state.uploaded_file_names:
+                metadata = metadata_inputs.get(file.name, {})
+                result = st.session_state.doc_processor.process_document(file, metadata=metadata)
+                if result['success']:
+                    success_count += 1
+                    st.sidebar.success(f"Processed: {result['metadata']['title']}")
+                    st.session_state.uploaded_file_names.add(file.name)
+                else:
+                    error_count += 1
+                    st.sidebar.error(f"Error processing {file.name}: {result['error']}")
+    
+    if error_count == 0 and success_count > 0:
+        st.sidebar.success("All documents processed successfully!")
+    elif success_count > 0 and error_count > 0:
+        st.sidebar.warning(f"Processing complete. {success_count} succeeded, {error_count} failed.")
+
+
 def extract_text_from_pdf(pdf_file: Any) -> str:
     """
     Extract text content from a PDF file
@@ -347,56 +443,6 @@ def get_document_text(file: Any) -> str:
         logger.error(f"Error extracting text from {file.name}: {str(e)}")
         raise
 
-def process_uploaded_files(uploaded_files: List[Any], metadata_inputs: Dict) -> None:
-    """Process uploaded files with enhanced metadata handling"""
-    try:
-        # Validate input files
-        if not uploaded_files:
-            st.sidebar.warning("No files selected for processing")
-            return
-            
-        # Initialize components
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
-            length_function=len,
-        )
-        
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-        
-        if st.session_state.vectorstore is None:
-            st.session_state.vectorstore = Chroma(
-                persist_directory=CHROMA_DB_DIR,
-                embedding_function=embeddings
-            )
-        
-        vectorstore = st.session_state.vectorstore
-        
-        with st.spinner('Processing documents...'):
-            for file in stqdm(uploaded_files):
-                if file.name not in st.session_state.uploaded_file_names:
-                    # Get metadata for this file
-                    metadata = metadata_inputs.get(file.name, {})
-                    
-                    # Process document
-                    result = st.session_state.doc_processor.process_document(
-                        file,
-                        metadata=metadata
-                    )
-                    
-                    if result['success']:
-                        st.sidebar.success(f"Processed: {result['metadata']['title']}")
-                        st.session_state.uploaded_file_names.add(file.name)
-                    else:
-                        st.sidebar.error(f"Error processing {file.name}: {result['error']}")
-                        
-        st.sidebar.success("All documents processed successfully!")
-
-    except Exception as e:
-        st.sidebar.error(f"Error processing files: {str(e)}")
-        logger.error(traceback.format_exc())
-        raise
-
 def clear_cache() -> None:
     """Clear all cached data"""
     cache_data.clear()
@@ -404,6 +450,12 @@ def clear_cache() -> None:
     
 def show_chat_interface(llm: Union[LLM, Any]) -> None:
     """Display the main chat interface"""
+    # Centralized error handling for vectorstore initialization
+    if 'vectorstore_error' in st.session_state and st.session_state.vectorstore_error:
+        st.error(f"Failed to initialize the document database: {st.session_state.vectorstore_error}")
+        st.info("This might be due to an API key issue or rate limiting. Please check your Google AI Platform billing and quotas.")
+        st.stop()
+
     # Add logo
     col1, col2, col3 = st.columns([1,100,1])
     with col2:
@@ -421,9 +473,9 @@ def show_chat_interface(llm: Union[LLM, Any]) -> None:
     with tab1:
         # Model selection inside chatbot tab
         model_options = {
-            "meta-llama/llama-4-scout-17b-16e-instruct (Groq)": "meta-llama/llama-4-scout-17b-16e-instruct",
-            "DeepSeek-R1 (HuggingFace)": "deepseek-ai/DeepSeek-V3-0324",
-            "SmallThinker-3B (HuggingFace)": "smallthinker",
+            "gpt-oss-120b (Groq)": "openai/gpt-oss-120b",
+            "DeepSeek-V3.2 (HuggingFace)": "deepseek-ai/DeepSeek-V3.2",
+            "Kimi-K2-Thinking (HuggingFace)": "moonshotai/Kimi-K2-Thinking",
         }
         
         selected_model = st.selectbox(
@@ -455,14 +507,7 @@ def show_chat_interface(llm: Union[LLM, Any]) -> None:
             if isinstance(a, dict) and 'result' in a and 'source_documents' in a:
                 st.write("Answer:", a['result'])
                 
-                # Display sources in expander
-                with st.expander("Sumber Referensi"):
-                    for doc in a['source_documents']:
-                        # Get the descriptive title directly from metadata
-                        source = doc.metadata.get('source', '')
-                        if source:
-                            st.markdown(f"**Sumber:** {source}")
-                            st.markdown("---")
+
             else:
                 st.write("Answer:", a)
             
@@ -471,10 +516,7 @@ def show_chat_interface(llm: Union[LLM, Any]) -> None:
         if submit_button and prompt1:
             try:
                 with memory_track():
-                    if st.session_state.vectorstore is None:
-                        st.session_state.vectorstore = initialize_or_load_vectorstore()
-                    
-                    vectorstore = st.session_state.vectorstore
+                    vectorstore = st.session_state.get('vectorstore')
                     if len(vectorstore.get()['ids']) > 0:
                         retriever = vectorstore.as_retriever(
                             search_type="similarity",
@@ -537,8 +579,14 @@ def show_chat_interface(llm: Union[LLM, Any]) -> None:
                         st.warning("No documents found in the database. Please ask an admin to upload some documents.")
                         
             except Exception as e:
-                st.error(f"Error processing question: {str(e)}")
-                logger.error(traceback.format_exc())
+                error_str = str(e).lower()
+                if "429" in error_str and "quota" in error_str:
+                    st.error("🚫 API Quota Exceeded")
+                    st.warning("The free allowance for the embedding service has been used up. To continue, you must enable billing on your Google Cloud project.")
+                    st.info("This is a billing issue, not an invalid API key. Please visit your Google AI Platform dashboard to check your plan and billing details.")
+                else:
+                    st.error(f"An unexpected error occurred: {e}")
+                logger.error(f"Error processing question: {traceback.format_exc()}")
 
     # Add a clear chat history button
     if st.session_state.chat_history and st.button("Clear Chat History"):
@@ -547,7 +595,7 @@ def show_chat_interface(llm: Union[LLM, Any]) -> None:
         
     # Footer
     st.markdown("---")
-    st.markdown("Built by Adnuri Mohamidi with help from AI :orange_heart:", help="cyberariani@gmail.com")
+    st.markdown("Developed by Adnuri Mohamidi with help from AI :orange_heart:", help="cyberariani@gmail.com")
     with tab2:
         st.write("""
         ### 🎯 Tentang Arsipy
@@ -565,7 +613,7 @@ def show_chat_interface(llm: Union[LLM, Any]) -> None:
 
         ### 💻 Teknologi
         - **Backend**: Python, ChromaDB, LangChain
-        - **AI Models**: llama-4-scout-17b-16e-instruct, DeepSeek-V3-0324
+        - **AI Models**: gpt-oss-120b, DeepSeek-V3.2
         - **OCR**: pytesseract, Tesseract OCR
         - **Frontend**: Streamlit
         - **Database**: Vector Store dengan Google AI Embeddings
@@ -697,11 +745,11 @@ Referensi dalam format {citation_style}"""
                         response = compound_model.invoke(prompt)
                         
                         if response:
-                            # Extract main content and remove metadata
-                            content = str(response).split("content='")[1].split("', additional_kwargs")[0]
+                            # Get the content directly from the AIMessage object
+                            content = response.content.replace('\\n', '\n')
                             
                             # Parse sections
-                            sections = {}
+                            sections: Dict[str, List[str]] = {}
                             current_section = None
                             
                             for line in content.split('\n'):
@@ -715,10 +763,13 @@ Referensi dalam format {citation_style}"""
                             # Display sections
                             for section, lines in sections.items():
                                 if lines:
-                                    # Join lines and remove redundant spaces/newlines
-                                    content = ' '.join(lines)
-                                    content = ' '.join(content.split())
+                                    # Join lines, preserving paragraph breaks
+                                    markdown_content = "\n".join(lines).strip()
+                                    section_content = markdown.markdown(markdown_content)
                                     
+                                    # Use default alignment for references, justify for others
+                                    text_align_style = "left" if section == "REFERENSI" else "justify"
+
                                     st.markdown(f"""
                                         <div style='background-color: #000000; 
                                             padding: 20px; 
@@ -733,7 +784,8 @@ Referensi dalam format {citation_style}"""
                                             <div style='font-size: 1rem; 
                                                 line-height: 1.8; 
                                                 text-align: justify;'>
-                                                {content}
+                                            <div style='font-size: 1rem; line-height: 1.8; text-align: {text_align_style};'>
+                                                {section_content}
                                             </div>
                                         </div>
                                     """, unsafe_allow_html=True)
@@ -741,6 +793,10 @@ Referensi dalam format {citation_style}"""
                             # Handle citations
                             if "REFERENSI" in sections and sections["REFERENSI"]:
                                 citations = ' '.join(sections["REFERENSI"])
+                            # The references are already displayed above. This is just for the download button.
+                            if "REFERENSI" in sections:
+                                # Join with newlines to preserve list format in the downloaded file
+                                citations = "\n".join(sections["REFERENSI"])
                                 if st.download_button(
                                     "📥 Unduh Referensi",
                                     citations,
@@ -799,13 +855,15 @@ Keep the format clean and consistent. Avoid any special characters except asteri
                         if response:
                             st.success("Analysis completed!")
                             
-                            # Clean and format response
-                            clean_response = str(response).split("content='")[1].split("', additional_kwargs=")[0]
+                            # Get content and replace escaped newlines
+                            clean_response = response.content.replace('\\n', '\n')
                             
                             # Split content into sections
-                            parts = clean_response.split("*")
+                            parts = clean_response.split("\n*")
                             
                             # Display main paragraphs
+                            summary_html = markdown.markdown(parts[0].strip())
+
                             st.markdown("""
                                 <div style='background-color: #000000; 
                                     padding: 20px; 
@@ -814,8 +872,8 @@ Keep the format clean and consistent. Avoid any special characters except asteri
                                     text-align: justify;
                                     line-height: 1.6;'>
                                     {}
-                                </div>
-                            """.format(parts[0].strip()), unsafe_allow_html=True)
+                                </div><br>
+                            """.format(summary_html), unsafe_allow_html=True)
                             
                             # Display key points
                             if len(parts) > 1:
@@ -831,7 +889,7 @@ Keep the format clean and consistent. Avoid any special characters except asteri
                                 
                                 for point in parts[1:]:
                                     if point.strip():
-                                        st.markdown(f"* {point.strip()}")
+                                        st.markdown(f"&bull; {point.strip()}")
                                 
                                 st.markdown("</div>", unsafe_allow_html=True)
                         else:
@@ -876,34 +934,39 @@ Ringkasan Konten:
                             if response:
                                 st.success("Analysis completed!")
                                 
-                                # Clean response
-                                clean_response = str(response)
-                                clean_response = clean_response.split("additional_kwargs=")[0].strip()
-                                clean_response = clean_response.replace("content='", "").replace("'", "")
+                                # Get content and replace escaped newlines
+                                clean_response = response.content.replace('\\n', '\n')
                                 clean_response = clean_response.replace("\n\n", "\n").strip()
                                 
-                                # Display sections
-                                sections = ['Ringkasan Konten:', 'Nilai Kearsipan:', 'Rekomendasi:']
+                                # Dynamically parse sections based on titles ending with a colon
+                                lines = clean_response.split('\n')
+                                sections = {}
+                                current_section_title = None
+                                current_section_content = []
                                 
-                                for section in sections:
-                                    if section in clean_response:
-                                        # Extract content between sections
-                                        start = clean_response.find(section) + len(section)
-                                        end = min([clean_response.find(s, start) if s in clean_response[start:] else len(clean_response) for s in sections if s != section])
-                                        content = clean_response[start:end].strip()
-                                        
-                                        st.markdown(f"""
-                                            <div style='background-color: #000000; padding: 20px; 
-                                                border-radius: 10px; margin: 20px 0; border: 1px solid #dee2e6;'>
-                                                <h3 style='color: #1F77B4; margin-bottom: 15px; 
-                                                    border-bottom: 2px solid #1F77B4; padding-bottom: 10px;'>
-                                                    {section.replace(":", "")}
-                                                </h3>
-                                                <div style='font-size: 1rem; line-height: 1.8; text-align: justify;'>
-                                                    {content}
-                                                </div>
-                                            </div>
-                                        """, unsafe_allow_html=True)
+                                for line in lines:
+                                    if line.strip().endswith(':') and len(line.strip().split()) < 5: # Likely a title
+                                        if current_section_title:
+                                            sections[current_section_title] = '\n'.join(current_section_content)
+                                        current_section_title = line.strip()
+                                        current_section_content = []
+                                    elif current_section_title:
+                                        current_section_content.append(line)
+                                if current_section_title: # Add the last section
+                                    sections[current_section_title] = '\n'.join(current_section_content)
+
+                                # Display the parsed sections
+                                for title, content in sections.items():
+                                    # Convert markdown content to HTML
+                                    content_html = markdown.markdown(content.strip())
+                                    st.markdown(f"""
+                                        <div style='background-color: #000000; padding: 20px; border-radius: 10px; margin: 20px 0; border: 1px solid #dee2e6;'>
+                                            <h3 style='color: #1F77B4; margin-bottom: 15px; border-bottom: 2px solid #1F77B4; padding-bottom: 10px;'>
+                                                {title.replace(":", "")}
+                                            </h3>
+                                            <div style='font-size: 1rem; line-height: 1.8; text-align: justify;'>{content_html}</div>
+                                        </div>
+                                    """, unsafe_allow_html=True)
                             else:
                                 st.error("No analysis generated. Please try again.")
                                 
@@ -941,10 +1004,18 @@ def initialize_or_load_vectorstore() -> Chroma:
         Exception: For initialization errors
     """
     try:
-        # Initialize embeddings
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-        
-        # Initialize or load the existing Chroma database
+        # Initialize NVIDIA embeddings using the custom class.
+        # This requires an NVIDIA_API_KEY in your .env file.
+        nvidia_api_key = os.getenv("NVIDIA_API_KEY")
+        if not nvidia_api_key:
+            raise ValueError("NVIDIA_API_KEY not found in environment variables.")
+            
+        embeddings = NvidiaEmbeddings(
+            model="nvidia/nv-embed-v1",
+            nvidia_api_key=nvidia_api_key,
+            input_type="passage"
+        )
+
         vectorstore = Chroma(
             persist_directory=CHROMA_DB_DIR,
             embedding_function=embeddings
@@ -1015,10 +1086,16 @@ def main() -> None:
     
     # Load and validate API keys
     groq_api_key = os.getenv('GROQ_API_KEY')
+    nvidia_api_key = os.getenv('NVIDIA_API_KEY')
+    # google_api_key is still used by image_analyzer, but not for embeddings.
+    if not groq_api_key or not nvidia_api_key:
+        st.error("Missing GROQ_API_KEY or NVIDIA_API_KEY. Please check your .env file.")
+        st.stop()
     google_api_key = os.getenv("GOOGLE_API_KEY")
 
-    if not groq_api_key or not google_api_key:
-        st.error("Missing API keys. Please check your .env file.")
+    # Google API key is now optional for the core RAG functionality
+    if not google_api_key:
+        logger.warning("GOOGLE_API_KEY not found. Image analysis features may be disabled.")
         st.stop()
 
     os.environ["GOOGLE_API_KEY"] = google_api_key
@@ -1033,21 +1110,23 @@ def main() -> None:
     if 'uploaded_file_names' not in st.session_state:
         st.session_state.uploaded_file_names = set()
     if 'vectorstore' not in st.session_state:
-        st.session_state.vectorstore = None
-    # Initialize doc_processor in session state (remove google_api_key)
+        st.session_state.vectorstore = initialize_or_load_vectorstore()
+    
+    # Initialize doc_processor in session state
     if 'doc_processor' not in st.session_state:
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-        vectorstore = Chroma(
-            persist_directory=CHROMA_DB_DIR,
-            embedding_function=embeddings
-        )
-        st.session_state.doc_processor = UnifiedDocumentProcessor(vectorstore)
+        # Only initialize if vectorstore was created successfully
+        if st.session_state.get('vectorstore'):
+            st.session_state.doc_processor = UnifiedDocumentProcessor(st.session_state.vectorstore)
+        else:
+            # Handle case where vectorstore failed to initialize
+            st.error("Document processor could not be initialized.")
+            st.stop()
 
     # Initialize LLM and prompt template
     try:
         llm = ChatGroq(
             groq_api_key=groq_api_key,
-            model_name="meta-llama/llama-4-scout-17b-16e-instruct"
+            model_name="openai/gpt-oss-120b"
         )
         
         

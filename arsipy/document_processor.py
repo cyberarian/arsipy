@@ -184,7 +184,17 @@ class UnifiedDocumentProcessor:
                 documents.append(doc)
 
             # Add to vectorstore
-            self.vectorstore.add_documents(documents)
+            try:
+                # Add to vectorstore
+                self.vectorstore.add_documents(documents)
+            except Exception as e:
+                # Catch potential embedding errors (like 429 quota issues)
+                error_str = str(e).lower()
+                if "429" in error_str and "quota" in error_str:
+                    error_msg = "API Quota Exceeded during document processing. Please enable billing on your Google Cloud project to continue."
+                    logger.error(f"{error_msg} - Details: {e}")
+                    raise Exception(error_msg) from e # Re-raise with a user-friendly message
+                raise e
             
             return {
                 'success': True,

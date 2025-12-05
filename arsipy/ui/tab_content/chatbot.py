@@ -67,4 +67,4 @@ def display_chat_history(chat_history: List) -> None:
 
 # Footer
     st.markdown("---")
-    st.markdown("Built by Adnuri Mohamidi with help from AI :orange_heart:", help="cyberariani@gmail.com")
+    st.markdown("Developed by Adnuri Mohamidi with help from AI :orange_heart:", help="cyberariani@gmail.com")
