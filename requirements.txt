@@ -1,5 +1,6 @@
 python-dotenv
-langchain 
+langchain==0.3.19
+jwt
 langchain-community 
 langchain-openai
 langchain-huggingface # Keep for other models if needed
@@ -20,7 +21,7 @@ PyMuPDF
 stqdm
 sentence-transformers
 huggingface-hub
-#pysqlite3-binary 
+pysqlite3-binary 
 gspread
 oauth2client
 pandas
