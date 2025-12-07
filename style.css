@@ -1,0 +1,43 @@
+/* Main container */
+.main {
+    padding: 2rem;
+}
+
+/* Sidebar */
+.sidebar .sidebar-content {
+    background-color: #f8f9fa;
+}
+
+/* Authentication form */
+.auth-form {
+    padding: 1rem;
+    background-color: #ffffff;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Chat container */
+.chat-container {
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    padding: 1rem;
+    margin: 1rem 0;
+    height: 400px;
+    overflow-y: auto;
+}
+
+/* File uploader */
+.uploadedFile {
+    border: 2px dashed #cccccc;
+    border-radius: 5px;
+    padding: 1rem;
+    text-align: center;
+}
+
+/* OCR Results */
+.ocr-results {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 5px;
+    margin-top: 1rem;
+}
